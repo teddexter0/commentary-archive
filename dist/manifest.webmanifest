@@ -1,0 +1,10 @@
+{
+  "name": "Commentary Archive",
+  "short_name": "Commentary",
+  "description": "A quiet, private place for the comments and ideas worth keeping.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f4f1e9",
+  "theme_color": "#10100f",
+  "icons": [{ "src": "./favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

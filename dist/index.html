@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#10100f" />
+    <meta name="description" content="A quiet, private place for the comments and ideas worth keeping." />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self'; script-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+    <title>Commentary Archive</title>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Archive navigation">
+        <a class="brand" href="#" aria-label="Commentary Archive home">
+          <span class="brand-mark">C</span>
+          <span>commentary</span>
+        </a>
+
+        <nav class="nav-stack" id="bucketNav" aria-label="Buckets">
+          <button class="nav-item active" data-bucket="all"><span class="nav-icon">⌘</span><span>All fragments</span><b id="allCount">0</b></button>
+          <button class="nav-item" data-bucket="inbox"><span class="bucket-dot dot-coral"></span><span>Inbox</span><b data-count="inbox">0</b></button>
+          <button class="nav-item" data-bucket="ideas"><span class="bucket-dot dot-blue"></span><span>Ideas</span><b data-count="ideas">0</b></button>
+          <button class="nav-item" data-bucket="perspective"><span class="bucket-dot dot-gold"></span><span>Perspective</span><b data-count="perspective">0</b></button>
+          <button class="nav-item" data-bucket="craft"><span class="bucket-dot dot-green"></span><span>Craft</span><b data-count="craft">0</b></button>
+        </nav>
+
+        <div class="sidebar-foot">
+          <p>Your archive stays on this device.</p>
+          <button class="quiet-button" id="openData">Back up & restore</button>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow" id="viewEyebrow">THE WHOLE ARCHIVE</p>
+            <h1 id="viewTitle">Things worth keeping.</h1>
+          </div>
+          <button class="capture-button" id="openCapture"><span>＋</span> Capture</button>
+        </header>
+
+        <section class="toolbar" aria-label="Archive controls">
+          <label class="search-box">
+            <span aria-hidden="true">⌕</span>
+            <input id="searchInput" type="search" placeholder="Search words, sources, or tags…" autocomplete="off" />
+            <kbd>⌘ K</kbd>
+          </label>
+          <div class="filter-chips" id="filterChips" aria-label="Source filters">
+            <button class="chip active" data-source="all">Everything</button>
+            <button class="chip" data-source="youtube">YouTube</button>
+            <button class="chip" data-source="article">Articles</button>
+            <button class="chip" data-source="image">Images</button>
+            <button class="chip" data-source="note">Notes</button>
+          </div>
+          <button class="sort-button" id="sortButton" aria-label="Change sort order">Newest ↓</button>
+        </section>
+
+        <section class="archive-meta">
+          <p id="resultCount">0 fragments</p>
+          <p id="privacyNote"><span></span> Saved locally</p>
+        </section>
+
+        <section class="card-grid" id="cardGrid" aria-live="polite"></section>
+
+        <section class="empty-state" id="emptyState" hidden>
+          <div class="empty-orbit"><span>“</span></div>
+          <h2 id="emptyTitle">Nothing in this corner yet.</h2>
+          <p>Capture a comment, thought, link, or screenshot. You can sort it properly later.</p>
+          <button class="text-button" id="emptyCapture">Capture your first fragment →</button>
+        </section>
+      </main>
+    </div>
+
+    <nav class="mobile-nav" aria-label="Mobile navigation">
+      <button class="active" data-mobile-bucket="all"><span>⌘</span>Archive</button>
+      <button data-mobile-bucket="inbox"><span>◒</span>Inbox</button>
+      <button id="mobileCapture" class="mobile-add" aria-label="Capture a fragment">＋</button>
+      <button id="mobileSearch"><span>⌕</span>Search</button>
+      <button id="mobileData"><span>···</span>Data</button>
+    </nav>
+
+    <dialog id="captureDialog" class="modal">
+      <form method="dialog" id="captureForm">
+        <div class="modal-head">
+          <div><p class="eyebrow">NEW FRAGMENT</p><h2 id="dialogTitle">What stopped you?</h2></div>
+          <button class="icon-button" value="cancel" aria-label="Close">×</button>
+        </div>
+
+        <input type="hidden" id="recordId" />
+        <label class="field">
+          <span>Source link <em>optional</em></span>
+          <div class="url-input"><span id="urlIcon">↗</span><input id="sourceUrl" type="url" placeholder="Paste a YouTube, article, or comment link" /></div>
+          <small id="linkHint">We keep the original link intact, including YouTube comment IDs.</small>
+        </label>
+
+        <label class="field quote-field">
+          <span>Comment or quote</span>
+          <textarea id="quoteText" rows="5" maxlength="5000" placeholder="Paste the exact words you want to remember…" required></textarea>
+          <small><b id="charCount">0</b> / 5,000</small>
+        </label>
+
+        <label class="field">
+          <span>Your note <em>optional</em></span>
+          <textarea id="noteText" rows="2" maxlength="1500" placeholder="Why did this matter to you?"></textarea>
+        </label>
+
+        <div class="field-row">
+          <label class="field"><span>Bucket</span><select id="bucketSelect"><option value="inbox">Inbox</option><option value="ideas">Ideas</option><option value="perspective">Perspective</option><option value="craft">Craft</option></select></label>
+          <label class="field"><span>Tags <em>optional</em></span><input id="tagsInput" type="text" placeholder="design, courage, work" /></label>
+        </div>
+
+        <label class="image-drop" id="imageDrop">
+          <input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp" />
+          <span class="upload-icon">▧</span>
+          <span><b>Add a screenshot</b><small id="imageHelp">PNG, JPG, or WebP — stays on this device</small></span>
+          <img id="imagePreview" alt="Selected screenshot preview" hidden />
+        </label>
+
+        <div class="modal-actions">
+          <button class="delete-button" id="deleteRecord" type="button" hidden>Delete</button>
+          <a class="source-button" id="openSource" target="_blank" rel="noopener noreferrer" hidden>Open source ↗</a>
+          <span class="action-spacer"></span>
+          <button class="secondary-button" value="cancel">Cancel</button>
+          <button class="primary-button" id="saveRecord" value="default">Save fragment</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="dataDialog" class="modal compact-modal">
+      <form method="dialog">
+        <div class="modal-head">
+          <div><p class="eyebrow">YOUR DATA</p><h2>Keep it yours.</h2></div>
+          <button class="icon-button" value="cancel" aria-label="Close">×</button>
+        </div>
+        <p class="data-intro">Nothing is uploaded to us. Download a backup occasionally so your archive can outlive this browser or device.</p>
+        <div class="data-actions">
+          <button type="button" class="data-card" id="exportData"><span>↓</span><div><b>Download backup</b><small>Everything in one JSON file</small></div></button>
+          <label class="data-card"><input id="importData" type="file" accept="application/json" /><span>↑</span><div><b>Restore backup</b><small>Merge a previous export</small></div></label>
+        </div>
+        <p class="storage-line" id="storageLine">Checking this device…</p>
+      </form>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./app.js" defer></script>
+  </body>
+</html>
