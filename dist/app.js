@@ -126,7 +126,7 @@ function setBucket(bucket) {
   state.bucket = bucket;
   $$("[data-bucket]").forEach(button => button.classList.toggle("active", button.dataset.bucket === bucket));
   $$("[data-mobile-bucket]").forEach(button => button.classList.toggle("active", button.dataset.mobileBucket === bucket));
-  const config = bucket === "all" ? { title: "Things worth keeping.", eyebrow: "THE WHOLE ARCHIVE" } : { title: BUCKETS[bucket].label + ".", eyebrow: "YOUR BUCKET" };
+  const config = bucket === "all" ? { title: "All fragments.", eyebrow: "Your archive" } : { title: BUCKETS[bucket].label + ".", eyebrow: "Bucket" };
   els.title.textContent = config.title;
   els.eyebrow.textContent = config.eyebrow;
   render();
