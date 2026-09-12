@@ -8,8 +8,9 @@ Everything is stored in the browser with IndexedDB. There are no accounts, track
 
 - Saves quotes and comments with their original source links
 - Preserves YouTube comment deep links
-- Sorts fragments into visual buckets with tags and search
-- Accepts screenshots and tries on-device text recognition when supported
+- Keeps remarks in a simple Inbox or Saved view, with tags and search
+- Resurfaces five deterministic highlights each week, rotating every Monday
+- Turns screenshots into editable text with a bundled, on-device OCR engine
 - Works offline after the first visit
 - Exports and restores the full archive
 

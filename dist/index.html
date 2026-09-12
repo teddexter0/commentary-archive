@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#10100f" />
     <meta name="description" content="A quiet, private place for the comments and ideas worth keeping." />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self'; script-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self'; script-src 'self'; worker-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=5" />
     <title>Commentary Archive</title>
   </head>
   <body>
@@ -21,13 +21,12 @@
 
         <nav class="nav-stack" id="bucketNav" aria-label="Buckets">
           <p class="nav-label">Library</p>
-          <button class="nav-item nav-all active" data-bucket="all"><span class="nav-icon">⌗</span><span>All fragments</span><b id="allCount">0</b></button>
+          <button class="nav-item nav-all active" data-bucket="all"><span class="nav-icon">⌗</span><span>All remarks</span><b id="allCount">0</b></button>
           <div class="bucket-cluster">
-            <div class="cluster-head"><span>Buckets</span><span>04</span></div>
+            <div class="cluster-head"><span>Views</span><span>03</span></div>
+            <button class="nav-item" data-bucket="weekly"><span class="nav-icon">✦</span><span>This week's highlights</span><b data-count="weekly">0</b></button>
             <button class="nav-item" data-bucket="inbox"><span class="bucket-dot dot-coral"></span><span>Inbox</span><b data-count="inbox">0</b></button>
-            <button class="nav-item" data-bucket="ideas"><span class="bucket-dot dot-blue"></span><span>Ideas</span><b data-count="ideas">0</b></button>
-            <button class="nav-item" data-bucket="perspective"><span class="bucket-dot dot-gold"></span><span>Perspective</span><b data-count="perspective">0</b></button>
-            <button class="nav-item" data-bucket="craft"><span class="bucket-dot dot-green"></span><span>Craft</span><b data-count="craft">0</b></button>
+            <button class="nav-item" data-bucket="saved"><span class="bucket-dot dot-blue"></span><span>Saved</span><b data-count="saved">0</b></button>
           </div>
         </nav>
 
@@ -41,7 +40,7 @@
         <header class="topbar">
           <div>
             <p class="eyebrow" id="viewEyebrow">Your archive</p>
-            <h1 id="viewTitle">All fragments.</h1>
+            <h1 id="viewTitle">Random reason-resonating remarks online.</h1>
           </div>
           <button class="capture-button" id="openCapture"><span>＋</span> Capture</button>
         </header>
@@ -80,7 +79,7 @@
 
     <nav class="mobile-nav" aria-label="Mobile navigation">
       <button class="active" data-mobile-bucket="all"><span>⌘</span>Archive</button>
-      <button data-mobile-bucket="inbox"><span>◒</span>Inbox</button>
+      <button data-mobile-bucket="weekly"><span>✦</span>Highlights</button>
       <button id="mobileCapture" class="mobile-add" aria-label="Capture a fragment">＋</button>
       <button id="mobileSearch"><span>⌕</span>Search</button>
       <button id="mobileData"><span>···</span>Data</button>
@@ -112,7 +111,7 @@
         </label>
 
         <div class="field-row">
-          <label class="field"><span>Bucket</span><select id="bucketSelect"><option value="inbox">Inbox</option><option value="ideas">Ideas</option><option value="perspective">Perspective</option><option value="craft">Craft</option></select></label>
+          <label class="field"><span>Place in</span><select id="bucketSelect"><option value="inbox">Inbox</option><option value="saved">Saved</option></select></label>
           <label class="field"><span>Tags <em>optional</em></span><input id="tagsInput" type="text" placeholder="design, courage, work" /></label>
         </div>
 
@@ -121,6 +120,7 @@
           <span class="upload-icon">▧</span>
           <span><b>Add a screenshot</b><small id="imageHelp">PNG, JPG, or WebP — stays on this device</small></span>
           <img id="imagePreview" alt="Selected screenshot preview" hidden />
+          <span class="ocr-progress" id="ocrProgress" hidden><i id="ocrBar"></i></span>
         </label>
 
         <div class="modal-actions">
@@ -149,6 +149,7 @@
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="./app.js" defer></script>
+    <script src="./ocr/tesseract.min.js?v=5" defer></script>
+    <script src="./app.js?v=5" defer></script>
   </body>
 </html>

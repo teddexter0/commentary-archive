@@ -3,9 +3,7 @@ const STORE = "fragments";
 const VERSION = 1;
 const BUCKETS = {
   inbox: { label: "Inbox", color: "coral" },
-  ideas: { label: "Ideas", color: "blue" },
-  perspective: { label: "Perspective", color: "gold" },
-  craft: { label: "Craft", color: "green" }
+  saved: { label: "Saved", color: "blue" }
 };
 
 const state = { records: [], bucket: "all", source: "all", query: "", newest: true, imageData: "" };
@@ -81,11 +79,29 @@ function formatDate(value) {
   return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(new Date(value));
 }
 
+function weekSeed() {
+  const now = new Date();
+  const utc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return Math.floor((utc + 259200000) / 604800000);
+}
+
+function seededScore(value) {
+  let hash = 2166136261;
+  for (const char of value) { hash ^= char.codePointAt(0); hash = Math.imul(hash, 16777619); }
+  return hash >>> 0;
+}
+
+function weeklyRecords() {
+  const seed = weekSeed();
+  return [...state.records].sort((a, b) => seededScore(`${seed}:${a.id}`) - seededScore(`${seed}:${b.id}`)).slice(0, 5);
+}
+
 function filteredRecords() {
   const q = state.query.trim().toLowerCase();
+  const weeklyIds = new Set(weeklyRecords().map(record => record.id));
   return state.records.filter(record => {
     const source = sourceDetails(record.url, Boolean(record.image));
-    const inBucket = state.bucket === "all" || record.bucket === state.bucket;
+    const inBucket = state.bucket === "all" || (state.bucket === "weekly" ? weeklyIds.has(record.id) : record.bucket === state.bucket);
     const inSource = state.source === "all" || source.type === state.source;
     const haystack = [record.quote, record.note, record.url, ...(record.tags || [])].join(" ").toLowerCase();
     return inBucket && inSource && (!q || haystack.includes(q));
@@ -112,9 +128,9 @@ function render() {
   const noun = records.length === 1 ? "fragment" : "fragments";
   els.count.textContent = `${records.length} ${noun}`;
   els.allCount.textContent = state.records.length;
-  Object.keys(BUCKETS).forEach(bucket => {
+  [...Object.keys(BUCKETS), "weekly"].forEach(bucket => {
     const node = document.querySelector(`[data-count="${bucket}"]`);
-    if (node) node.textContent = state.records.filter(record => record.bucket === bucket).length;
+    if (node) node.textContent = bucket === "weekly" ? weeklyRecords().length : state.records.filter(record => record.bucket === bucket).length;
   });
   $$(".fragment-card").forEach(card => {
     card.addEventListener("click", () => openEditor(card.dataset.id));
@@ -126,7 +142,11 @@ function setBucket(bucket) {
   state.bucket = bucket;
   $$("[data-bucket]").forEach(button => button.classList.toggle("active", button.dataset.bucket === bucket));
   $$("[data-mobile-bucket]").forEach(button => button.classList.toggle("active", button.dataset.mobileBucket === bucket));
-  const config = bucket === "all" ? { title: "All fragments.", eyebrow: "Your archive" } : { title: BUCKETS[bucket].label + ".", eyebrow: "Bucket" };
+  const config = bucket === "all"
+    ? { title: "Random reason-resonating remarks online.", eyebrow: "Your archive" }
+    : bucket === "weekly"
+      ? { title: "Highlights this week.", eyebrow: "A fresh set every Monday" }
+      : { title: BUCKETS[bucket].label + ".", eyebrow: "Your archive" };
   els.title.textContent = config.title;
   els.eyebrow.textContent = config.eyebrow;
   render();
@@ -143,8 +163,12 @@ function resetForm() {
   $("#openSource").removeAttribute("href");
   $("#dialogTitle").textContent = "What stopped you?";
   $("#saveRecord").textContent = "Save fragment";
+  $("#saveRecord").disabled = false;
+  $("#ocrProgress").hidden = true;
+  $("#ocrBar").style.width = "0%";
+  $("#imageHelp").textContent = "PNG, JPG, or WebP — text is extracted on this device";
   els.charCount.textContent = "0";
-  els.bucket.value = state.bucket === "all" ? "inbox" : state.bucket;
+  els.bucket.value = BUCKETS[state.bucket] ? state.bucket : "inbox";
 }
 
 function openCapture() { resetForm(); els.capture.showModal(); setTimeout(() => els.sourceUrl.focus(), 30); }
@@ -202,24 +226,56 @@ async function saveForm(event) {
   } catch { notify("Could not save on this device"); }
 }
 
+async function transcribeImage(file) {
+  const progress = $("#ocrProgress");
+  const bar = $("#ocrBar");
+  const help = $("#imageHelp");
+  const save = $("#saveRecord");
+  progress.hidden = false;
+  save.disabled = true;
+  help.textContent = "Preparing private on-device transcription…";
+  let worker;
+  try {
+    if (!window.Tesseract?.createWorker) throw new Error("OCR engine unavailable");
+    const absolute = path => new URL(path, window.location.href).href;
+    worker = await Tesseract.createWorker("eng", 1, {
+      workerPath: absolute("./ocr/worker.min.js"),
+      corePath: absolute("./ocr/tesseract-core-lstm.wasm.js"),
+      langPath: absolute("./ocr").replace(/\/$/, ""),
+      gzip: true,
+      logger: message => {
+        const percent = Math.round((message.progress || 0) * 100);
+        bar.style.width = `${percent}%`;
+        help.textContent = message.status === "recognizing text" ? `Reading screenshot… ${percent}%` : "Loading the on-device reader…";
+      }
+    });
+    const result = await worker.recognize(file);
+    const text = result?.data?.text?.replace(/\n{3,}/g, "\n\n").trim();
+    if (!text) throw new Error("No text found");
+    els.quote.value = els.quote.value.trim() ? `${els.quote.value.trim()}\n\n${text}` : text;
+    els.charCount.textContent = els.quote.value.length;
+    help.textContent = "Text extracted — check it, then save";
+    bar.style.width = "100%";
+    notify("Screenshot turned into editable text");
+  } catch {
+    help.textContent = "No clear text found — you can still type or paste it above";
+    notify("Could not read that screenshot clearly");
+  } finally {
+    if (worker) await worker.terminate();
+    save.disabled = false;
+    setTimeout(() => { progress.hidden = true; }, 900);
+  }
+}
+
 async function handleImage(file) {
   if (!file) return;
-  if (file.size > 4 * 1024 * 1024) { notify("Please choose an image under 4 MB"); return; }
+  if (file.size > 8 * 1024 * 1024) { notify("Please choose an image under 8 MB"); return; }
   state.imageData = await new Promise((resolve, reject) => {
     const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(file);
   });
   els.preview.src = state.imageData;
   els.preview.hidden = false;
-  if ("TextDetector" in window && !els.quote.value.trim()) {
-    try {
-      $("#imageHelp").textContent = "Looking for text on this device…";
-      const bitmap = await createImageBitmap(file);
-      const blocks = await new TextDetector().detect(bitmap);
-      const text = blocks.map(block => block.rawValue).join("\n").trim();
-      if (text) { els.quote.value = text; els.charCount.textContent = text.length; notify("Text found — give it a quick check"); }
-      $("#imageHelp").textContent = "Screenshot added — stored only on this device";
-    } catch { $("#imageHelp").textContent = "Screenshot added — paste the text above if needed"; }
-  } else { $("#imageHelp").textContent = "Screenshot added — stored only on this device"; }
+  await transcribeImage(file);
 }
 
 async function exportArchive() {
@@ -238,7 +294,8 @@ async function importArchive(file) {
     const payload = JSON.parse(await file.text());
     if (!Array.isArray(payload.fragments)) throw new Error("Invalid backup");
     for (const item of payload.fragments) {
-      if (!item.id || !item.quote || !BUCKETS[item.bucket]) continue;
+      if (!item.id || !item.quote) continue;
+      if (!BUCKETS[item.bucket]) item.bucket = "saved";
       await putRecord(item);
     }
     state.records = await allRecords();
@@ -297,8 +354,14 @@ $("#importData").addEventListener("change", event => importArchive(event.target.
 document.addEventListener("keydown", event => { if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") { event.preventDefault(); $("#searchInput").focus(); } if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && els.capture.open) els.form.requestSubmit(); });
 
 async function init() {
-  try { state.records = await allRecords(); render(); } catch { notify("This browser blocked local storage"); }
+  try {
+    state.records = await allRecords();
+    const legacyRecords = state.records.filter(record => !BUCKETS[record.bucket]);
+    for (const record of legacyRecords) await putRecord({ ...record, bucket: "saved", updatedAt: Date.now() });
+    if (legacyRecords.length) state.records = await allRecords();
+    render();
+  } catch { notify("This browser blocked local storage"); }
   registerWebMcp();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=5").catch(() => {});
 }
 init();

@@ -1,0 +1,7 @@
+Commentary Archive bundles Tesseract.js 7.0.0 and tesseract.js-core 7.0.0
+under the Apache License 2.0, plus English trained data from naptha/tessdata.
+
+Project sources:
+https://github.com/naptha/tesseract.js
+https://github.com/naptha/tesseract.js-core
+https://github.com/naptha/tessdata
