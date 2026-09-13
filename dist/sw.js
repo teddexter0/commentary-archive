@@ -1,5 +1,5 @@
-const CACHE = "commentary-archive-v5";
-const ASSETS = ["./", "./index.html", "./styles.css?v=5", "./app.js?v=5", "./ocr/tesseract.min.js?v=5", "./manifest.webmanifest", "./favicon.svg", "./fonts/InstrumentSans-Variable.woff2", "./fonts/InstrumentSerif-Regular.woff2"];
+const CACHE = "commentary-archive-v8";
+const ASSETS = ["./", "./index.html", "./styles.css?v=8", "./config.js?v=8", "./app.js?v=8", "./main.js?v=8", "./ocr/tesseract.min.js?v=8", "./manifest.webmanifest", "./favicon.svg"];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));
 self.addEventListener("fetch", event => {

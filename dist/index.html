@@ -3,153 +3,97 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#10100f" />
-    <meta name="description" content="A quiet, private place for the comments and ideas worth keeping." />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self'; script-src 'self'; worker-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="A private archive that reads, sorts, and reconnects the ideas you save." />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob: https://*.supabase.co; style-src 'self'; script-src 'self'; worker-src 'self' blob:; connect-src 'self' https://r.jina.ai https://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="./styles.css?v=5" />
+    <link rel="stylesheet" href="./styles.css?v=8" />
     <title>Commentary Archive</title>
   </head>
   <body>
     <div class="app-shell">
       <aside class="sidebar" aria-label="Archive navigation">
-        <a class="brand" href="#" aria-label="Commentary Archive home">
-          <span class="brand-mark">c/</span>
-          <span>commentary</span>
-        </a>
-
-        <nav class="nav-stack" id="bucketNav" aria-label="Buckets">
-          <p class="nav-label">Library</p>
-          <button class="nav-item nav-all active" data-bucket="all"><span class="nav-icon">⌗</span><span>All remarks</span><b id="allCount">0</b></button>
-          <div class="bucket-cluster">
-            <div class="cluster-head"><span>Views</span><span>03</span></div>
-            <button class="nav-item" data-bucket="weekly"><span class="nav-icon">✦</span><span>This week's highlights</span><b data-count="weekly">0</b></button>
-            <button class="nav-item" data-bucket="inbox"><span class="bucket-dot dot-coral"></span><span>Inbox</span><b data-count="inbox">0</b></button>
-            <button class="nav-item" data-bucket="saved"><span class="bucket-dot dot-blue"></span><span>Saved</span><b data-count="saved">0</b></button>
-          </div>
+        <a class="brand" href="#"><span class="brand-glyph">c/</span><span>commentary</span></a>
+        <nav class="nav-stack" id="archiveNav" aria-label="Archive categories">
+          <p class="nav-label">Archive</p>
+          <button class="nav-item active" data-view="all"><span class="nav-symbol">⌘</span><span>Everything</span><b id="allCount">0</b></button>
+          <button class="nav-item" data-view="weekly"><span class="nav-symbol">✦</span><span>Resurface</span><b data-count="weekly">0</b></button>
+          <p class="nav-label category-label">Categories</p>
+          <div id="categoryNav"></div>
         </nav>
-
         <div class="sidebar-foot">
-          <p>Your archive stays on this device.</p>
-          <button class="quiet-button" id="openData">Back up & restore</button>
+          <button class="sync-card" id="openAccount" type="button"><span class="sync-orb" id="syncOrb"></span><span><b id="syncTitle">This device</b><small id="syncSubtitle">Private local archive</small></span><span aria-hidden="true">›</span></button>
+          <button class="quiet-button" id="openData" type="button">Backup & restore</button>
         </div>
       </aside>
 
       <main class="workspace">
         <header class="topbar">
-          <div>
-            <p class="eyebrow" id="viewEyebrow">Your archive</p>
-            <h1 id="viewTitle">Random reason-resonating remarks online.</h1>
-          </div>
-          <button class="capture-button" id="openCapture"><span>＋</span> Capture</button>
+          <div><p class="eyebrow" id="viewEyebrow">Your archive</p><h1 id="viewTitle">Everything worth keeping.</h1></div>
+          <button class="capture-button" id="openCapture" type="button"><span>＋</span> Add</button>
         </header>
-
         <section class="toolbar" aria-label="Archive controls">
-          <label class="search-box">
-            <span aria-hidden="true">⌕</span>
-            <input id="searchInput" type="search" placeholder="Search words, sources, or tags…" autocomplete="off" />
-            <kbd>⌘ K</kbd>
-          </label>
-          <div class="filter-chips" id="filterChips" aria-label="Source filters">
-            <button class="chip active" data-source="all">Everything</button>
-            <button class="chip" data-source="youtube">YouTube</button>
-            <button class="chip" data-source="article">Articles</button>
-            <button class="chip" data-source="image">Images</button>
-            <button class="chip" data-source="note">Notes</button>
+          <label class="search-box"><span aria-hidden="true">⌕</span><input id="searchInput" type="search" placeholder="Search ideas, sources, or tags" autocomplete="off" /><kbd>⌘ K</kbd></label>
+          <div class="filter-chips" id="filterChips" aria-label="Content type">
+            <button class="chip active" data-source="all" type="button">All</button><button class="chip" data-source="article" type="button">Links</button><button class="chip" data-source="image" type="button">Images</button><button class="chip" data-source="note" type="button">Text</button>
           </div>
-          <button class="sort-button" id="sortButton" aria-label="Change sort order">Newest ↓</button>
+          <button class="sort-button" id="sortButton" type="button">Newest</button>
         </section>
-
-        <section class="archive-meta">
-          <p id="resultCount">0 fragments</p>
-          <p id="privacyNote"><span></span> Saved locally</p>
-        </section>
-
+        <section class="archive-meta"><p id="resultCount">0 items</p><p id="privacyNote"><span></span><span id="saveState">Saved locally</span></p></section>
         <section class="card-grid" id="cardGrid" aria-live="polite"></section>
-
-        <section class="empty-state" id="emptyState" hidden>
-          <div class="empty-orbit"><span>“</span></div>
-          <h2 id="emptyTitle">Nothing in this corner yet.</h2>
-          <p>Capture a comment, thought, link, or screenshot. You can sort it properly later.</p>
-          <button class="text-button" id="emptyCapture">Capture your first fragment →</button>
-        </section>
+        <section class="empty-state" id="emptyState" hidden><span class="empty-mark">＋</span><h2>Nothing here yet.</h2><p>Drop in links or screenshots. The archive will read and sort them.</p><button class="text-button" id="emptyCapture" type="button">Add something</button></section>
       </main>
     </div>
 
     <nav class="mobile-nav" aria-label="Mobile navigation">
-      <button class="active" data-mobile-bucket="all"><span>⌘</span>Archive</button>
-      <button data-mobile-bucket="weekly"><span>✦</span>Highlights</button>
-      <button id="mobileCapture" class="mobile-add" aria-label="Capture a fragment">＋</button>
-      <button id="mobileSearch"><span>⌕</span>Search</button>
-      <button id="mobileData"><span>···</span>Data</button>
+      <button class="active" data-mobile-view="all" type="button"><span>⌘</span>Archive</button><button data-mobile-view="tech" type="button"><span>◇</span>Tech</button><button class="mobile-add" id="mobileCapture" type="button" aria-label="Add to archive">＋</button><button data-mobile-view="life" type="button"><span>○</span>Life</button><button id="mobileMore" type="button"><span>•••</span>More</button>
     </nav>
 
-    <dialog id="captureDialog" class="modal">
-      <form method="dialog" id="captureForm">
-        <div class="modal-head">
-          <div><p class="eyebrow">NEW FRAGMENT</p><h2 id="dialogTitle">What stopped you?</h2></div>
-          <button class="icon-button" value="cancel" aria-label="Close">×</button>
-        </div>
+    <dialog id="captureDialog" class="modal capture-modal">
+      <form id="captureForm" novalidate>
+        <div class="modal-head"><div><p class="eyebrow">QUICK CAPTURE</p><h2>Drop it in.</h2></div><button class="icon-button" id="closeCapture" type="button" aria-label="Close">×</button></div>
+        <p class="modal-intro">Links get read and digested. Screenshots get transcribed. You only add tags if you want to.</p>
+        <label class="field"><span>Links <em>up to 30, one per line</em></span><textarea id="bulkLinks" rows="6" placeholder="https://article-one.com&#10;https://youtube.com/watch?v=…"></textarea></label>
+        <div class="capture-divider"><span>or</span></div>
+        <label class="image-drop" id="imageDrop"><input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp" multiple /><span class="upload-icon">⌗</span><span><b>Drop screenshots here</b><small id="imageHelp">Text is read privately on this device</small></span><span class="file-count" id="fileCount"></span><span class="ocr-progress" id="ocrProgress" hidden><i id="ocrBar"></i></span></label>
+        <label class="field tag-field"><span>Tags <em>optional</em></span><input id="tagsInput" type="text" placeholder="e.g. privacy, ambition, startup" /></label>
+        <details class="paste-details"><summary>Paste plain text instead</summary><label class="field"><textarea id="plainText" rows="4" placeholder="Paste a quote, comment, or thought"></textarea></label></details>
+        <div class="capture-queue" id="captureQueue" hidden aria-live="polite"></div><p class="form-error" id="captureError" hidden></p>
+        <div class="modal-actions"><button class="secondary-button" id="cancelCapture" type="button">Cancel</button><span class="action-spacer"></span><button class="primary-button" id="saveRecord" type="submit">Digest & save</button></div>
+      </form>
+    </dialog>
 
-        <input type="hidden" id="recordId" />
-        <label class="field">
-          <span>Source link <em>optional</em></span>
-          <div class="url-input"><span id="urlIcon">↗</span><input id="sourceUrl" type="url" placeholder="Paste a YouTube, article, or comment link" /></div>
-          <small id="linkHint">We keep the original link intact, including YouTube comment IDs.</small>
-        </label>
+    <dialog id="detailDialog" class="modal detail-modal">
+      <article>
+        <div class="modal-head"><div><p class="eyebrow" id="detailMeta"></p><h2 id="detailTitle"></h2></div><button class="icon-button" id="closeDetail" type="button" aria-label="Close">×</button></div>
+        <p class="detail-thesis" id="detailThesis"></p>
+        <section class="insight-panel" id="relevancePanel"><p>Why it matters</p><div id="detailRelevance"></div></section>
+        <section class="insight-panel resonance-panel" id="resonancePanel"><p>Keep this</p><blockquote id="detailResonance"></blockquote></section>
+        <div class="detail-tags" id="detailTags"></div>
+        <div class="modal-actions"><button class="delete-button" id="deleteRecord" type="button">Delete</button><span class="action-spacer"></span><button class="secondary-button" id="dismissDetail" type="button">Done</button><a class="primary-button source-link" id="detailLink" target="_blank" rel="noopener noreferrer">Go to source ↗</a></div>
+      </article>
+    </dialog>
 
-        <label class="field quote-field">
-          <span>Comment or quote</span>
-          <textarea id="quoteText" rows="5" maxlength="5000" placeholder="Paste the exact words you want to remember…" required></textarea>
-          <small><b id="charCount">0</b> / 5,000</small>
-        </label>
-
-        <label class="field">
-          <span>Your note <em>optional</em></span>
-          <textarea id="noteText" rows="2" maxlength="1500" placeholder="Why did this matter to you?"></textarea>
-        </label>
-
-        <div class="field-row">
-          <label class="field"><span>Place in</span><select id="bucketSelect"><option value="inbox">Inbox</option><option value="saved">Saved</option></select></label>
-          <label class="field"><span>Tags <em>optional</em></span><input id="tagsInput" type="text" placeholder="design, courage, work" /></label>
-        </div>
-
-        <label class="image-drop" id="imageDrop">
-          <input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp" />
-          <span class="upload-icon">▧</span>
-          <span><b>Add a screenshot</b><small id="imageHelp">PNG, JPG, or WebP — stays on this device</small></span>
-          <img id="imagePreview" alt="Selected screenshot preview" hidden />
-          <span class="ocr-progress" id="ocrProgress" hidden><i id="ocrBar"></i></span>
-        </label>
-
-        <div class="modal-actions">
-          <button class="delete-button" id="deleteRecord" type="button" hidden>Delete</button>
-          <a class="source-button" id="openSource" target="_blank" rel="noopener noreferrer" hidden>Open source ↗</a>
-          <span class="action-spacer"></span>
-          <button class="secondary-button" value="cancel">Cancel</button>
-          <button class="primary-button" id="saveRecord" value="default">Save fragment</button>
-        </div>
+    <dialog id="accountDialog" class="modal compact-modal">
+      <form id="accountForm" novalidate>
+        <div class="modal-head"><div><p class="eyebrow">CLOUD SYNC</p><h2 id="accountTitle">Take it with you.</h2></div><button class="icon-button" id="closeAccount" type="button" aria-label="Close">×</button></div>
+        <p class="modal-intro" id="accountIntro">Sign in once to keep the same archive across your devices.</p>
+        <div id="accountSetup" class="setup-note" hidden>Cloud sync is prepared but not connected. Add the Supabase project URL and publishable key to activate it—never the database password.</div>
+        <div id="accountFields"><label class="field"><span>Email</span><input id="accountEmail" type="email" autocomplete="email" /></label><label class="field"><span>Password</span><input id="accountPassword" type="password" autocomplete="current-password" /></label><p class="form-error" id="accountError" hidden></p><div class="account-actions"><button class="secondary-button" id="createAccount" type="button">Create account</button><button class="primary-button" id="signIn" type="submit">Sign in</button></div></div>
+        <div id="signedInPanel" hidden><p class="signed-in-copy">Signed in as <b id="signedInEmail"></b></p><button class="secondary-button" id="signOut" type="button">Sign out</button></div>
       </form>
     </dialog>
 
     <dialog id="dataDialog" class="modal compact-modal">
-      <form method="dialog">
-        <div class="modal-head">
-          <div><p class="eyebrow">YOUR DATA</p><h2>Keep it yours.</h2></div>
-          <button class="icon-button" value="cancel" aria-label="Close">×</button>
-        </div>
-        <p class="data-intro">Nothing is uploaded to us. Download a backup occasionally so your archive can outlive this browser or device.</p>
-        <div class="data-actions">
-          <button type="button" class="data-card" id="exportData"><span>↓</span><div><b>Download backup</b><small>Everything in one JSON file</small></div></button>
-          <label class="data-card"><input id="importData" type="file" accept="application/json" /><span>↑</span><div><b>Restore backup</b><small>Merge a previous export</small></div></label>
-        </div>
-        <p class="storage-line" id="storageLine">Checking this device…</p>
-      </form>
+      <form novalidate><div class="modal-head"><div><p class="eyebrow">YOUR DATA</p><h2>Backup & restore.</h2></div><button class="icon-button" id="closeData" type="button" aria-label="Close">×</button></div><p class="modal-intro">Download a portable copy or merge one back into this archive.</p><div class="data-actions"><button type="button" class="data-card" id="exportData"><span>↓</span><div><b>Download backup</b><small>Everything in one JSON file</small></div></button><label class="data-card"><input id="importData" type="file" accept="application/json" /><span>↑</span><div><b>Restore backup</b><small>Merge a previous export</small></div></label></div><p class="storage-line" id="storageLine"></p></form>
+    </dialog>
+
+    <dialog id="moreDialog" class="modal compact-modal mobile-more-modal">
+      <article><div class="modal-head"><h2>Browse</h2><button class="icon-button" id="closeMore" type="button" aria-label="Close">×</button></div><div class="more-grid" id="mobileCategoryGrid"></div><div class="modal-actions"><button class="secondary-button" id="mobileAccount" type="button">Cloud sync</button><button class="secondary-button" id="mobileData" type="button">Backup</button></div></article>
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="./ocr/tesseract.min.js?v=5" defer></script>
-    <script src="./app.js?v=5" defer></script>
+    <script src="./config.js?v=8"></script><script src="./ocr/tesseract.min.js?v=8" defer></script><script src="./app.js?v=8" defer></script><script src="./main.js?v=8" defer></script>
   </body>
 </html>
